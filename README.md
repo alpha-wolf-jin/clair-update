@@ -80,15 +80,10 @@ $ ll /home/jinzha-redhat.com/clair/updaters/clairctl*
 
 ```
 
+## 7.2.3. Exporting the updaters bundle
+
 ```
 cd ./clair/updaters
-
-$ ll
-total 177420
--rwxr-xr-x. 1            231069 231069  22595592 Jul 23 10:37 clairctl-3-6
--rwxr-xr-x. 1            231069 231069  24910609 Jul 23 10:41 clairctl-3-7
--rw-r--r--. 1 jinzha-redhat.com users       1282 Jul 23 10:47 dest-config.yaml
--rw-r--r--. 1 jinzha-redhat.com users  134163351 Jul 23 10:46 updates.gz
 
 log_level: info
 indexer:
@@ -135,13 +130,25 @@ updaters:
     - rhel
     - oracle
 
+$ ./clairctl-3-7 --config ./dest-config.yaml export-updaters updates.gz
+
+$ ll
+total 177420
+-rwxr-xr-x. 1            231069 231069  22595592 Jul 23 10:37 clairctl-3-6
+-rwxr-xr-x. 1            231069 231069  24910609 Jul 23 10:41 clairctl-3-7
+-rw-r--r--. 1 jinzha-redhat.com users       1282 Jul 23 10:47 dest-config.yaml
+-rw-r--r--. 1 jinzha-redhat.com users  134163351 Jul 23 10:46 updates.gz
 ```
+
+## 7.2.4. Configuring access to the Clair database in the air-gapped OpenShift cluster
 
 On other session run port forward
 ```
 $ oc port-forward service/example-registry-clair-postgres 5432:5432
 
 ```
+
+## 7.2.5. Importing the updaters bundle into the air-gapped environment
 
 Import Updaters
 ```
