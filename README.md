@@ -152,7 +152,7 @@ $ oc port-forward service/example-registry-clair-postgres 5432:5432
 
 ## 7.2.5. Importing the updaters bundle into the air-gapped environment
 
-Import Updaters
+**Workround 02**
 ```
 $ ./clairctl-3-7 -D --config ./clair-config.yaml import-updaters -g updates.gz 
 2022-07-23T10:53:02Z ERR  error="gzip: invalid header"
@@ -166,4 +166,3 @@ $ ./clairctl-3-6 -D --config ./clair-config.yaml import-updaters  updates.gz
 
 > **Guess there is a bug in clairctl from quay3.7**
 
-> **Workaround is to use the clairctl from quay3.6 to import**
