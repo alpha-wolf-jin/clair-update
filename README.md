@@ -86,7 +86,7 @@ $ ll /home/jinzha-redhat.com/clair/updaters/clairctl*
 ```
 $ oc get secret -n quay-enterprise example-registry-clair-config-secret-kk9h966cfh -o "jsonpath={$.data['config\.yaml']}" | base64 -d > clair-config.yaml
 
-# user localhost to replace example-registry-clair-postgres
+# use localhost to replace example-registry-clair-postgres
 $ vim clair-config.yaml
 
 :%s#example-registry-clair-postgres#localhost#g
