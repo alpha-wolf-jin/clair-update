@@ -216,5 +216,321 @@ Forwarding from 127.0.0.1:5432 -> 5432
 Forwarding from [::1]:5432 -> 5432
 ```
 
-http_listen_addr
+Find out IPs used in quay project
+
+- 3.133.250.207
+- 3.13.168.216
+- 10.128.0.0/14
+- 172.30.0.0/16
+
+```
+$ oc get route
+NAME                                  HOST/PORT                                                                                             PATH   SERVICES                              PORT     TERMINATION     WILDCARD
+example-registry-quay                 example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com                        example-registry-quay-app             http     edge/Redirect   None
+example-registry-quay-builder         example-registry-quay-builder-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com                example-registry-quay-app             grpc     edge/Redirect   None
+example-registry-quay-config-editor   example-registry-quay-config-editor-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com          example-registry-quay-config-editor   http     edge/Redirect   None
+
+$ dig example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com
+
+;; ANSWER SECTION:
+example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com. 60 IN A 3.133.250.207
+example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com. 60 IN A 3.13.168.216
+
+$ dig example-registry-quay-builder-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com
+
+;; ANSWER SECTION:
+example-registry-quay-builder-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com. 60 IN A 3.133.250.207
+example-registry-quay-builder-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com. 60 IN A 3.13.168.216
+
+
+$ dig example-registry-quay-config-editor-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com
+
+;; ANSWER SECTION:
+example-registry-quay-config-editor-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com. 60	IN A 3.133.250.207
+example-registry-quay-config-editor-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com. 60	IN A 3.13.168.216
+
+$ oc describe network.config/cluster
+
+Spec:
+  Cluster Network:
+    Cidr:         10.128.0.0/14
+    Host Prefix:  23
+  External IP:
+    Policy:
+  Network Type:  OpenShiftSDN
+  Service Network:
+    172.30.0.0/16
+
+```
+
+Delete the QuayRegistries instance
+
+Set Egress restriction to simulate disconnection environment
+
+```
+$ cat egress.yaml 
+apiVersion: network.openshift.io/v1
+kind: EgressNetworkPolicy
+metadata:
+  name: default
+spec:
+  egress: 
+  - type: Allow
+    to:
+      cidrSelector: 172.30.0.0/16
+  - type: Allow
+    to:
+      cidrSelector: 10.128.0.0/14
+  - type: Allow
+    to:
+      cidrSelector: 3.133.250.207/32
+  - type: Allow
+    to:
+      cidrSelector: 3.13.168.216/32
+  - type: Allow
+    to:
+      dnsName: example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com
+  - type: Deny
+    to:
+      cidrSelector: 0.0.0.0/0
+
+$ oc apply -f egress.yaml
+
+```
+
+Redeploy QuayRegistry again. The images were pulled locally during the previous installation.
+
+Confirm the CVE data is empty
+
+```
+$ oc get pod
+NAME                                                   READY   STATUS      RESTARTS      AGE
+example-registry-clair-postgres-5f9c6cd797-pn5mq       1/1     Running     1 (88s ago)   109s
+
+$ oc rsh example-registry-clair-postgres-5f9c6cd797-pn5mq
+sh-4.4$ psql -U postgres;
+psql (10.21)
+Type "help" for help.
+postgres=# \dt
+                   List of relations
+ Schema |           Name            | Type  |  Owner   
+--------+---------------------------+-------+----------
+ public | dist                      | table | postgres
+ public | dist_scanartifact         | table | postgres
+ public | enrichment                | table | postgres
+ public | indexreport               | table | postgres
+ public | key                       | table | postgres
+ public | layer                     | table | postgres
+ public | libindex_migrations       | table | postgres
+ public | libvuln_migrations        | table | postgres
+ public | manifest                  | table | postgres
+ public | manifest_index            | table | postgres
+ public | manifest_layer            | table | postgres
+ public | notification              | table | postgres
+ public | notification_body         | table | postgres
+ public | notifier_migrations       | table | postgres
+ public | notifier_update_operation | table | postgres
+ public | package                   | table | postgres
+ public | package_scanartifact      | table | postgres
+ public | receipt                   | table | postgres
+ public | repo                      | table | postgres
+ public | repo_scanartifact         | table | postgres
+ public | scanned_layer             | table | postgres
+ public | scanned_manifest          | table | postgres
+ public | scanner                   | table | postgres
+ public | scannerlist               | table | postgres
+ public | uo_enrich                 | table | postgres
+ public | uo_vuln                   | table | postgres
+ public | update_operation          | table | postgres
+ public | vuln                      | table | postgres
+(28 rows)
+
+postgres=# \l
+                                 List of databases
+   Name    |  Owner   | Encoding |  Collate   |   Ctype    |   Access privileges   
+-----------+----------+----------+------------+------------+-----------------------
+ postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 | 
+ template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +
+           |          |          |            |            | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +
+           |          |          |            |            | postgres=CTc/postgres
+(3 rows)
+
+postgres=# \l
+                                 List of databases
+   Name    |  Owner   | Encoding |  Collate   |   Ctype    |   Access privileges   
+-----------+----------+----------+------------+------------+-----------------------
+ postgres  | postgres | UTF8     | en_US.utf8 | en_US.utf8 | 
+ template0 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +
+           |          |          |            |            | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.utf8 | en_US.utf8 | =c/postgres          +
+           |          |          |            |            | postgres=CTc/postgres
+(3 rows)
+
+postgres=# TABLE vuln;
+ id | hash_kind | hash | updater | name | description | issued | links | severity | normalized_severity | package_name | package_version | package_module | package_arch | pa
+ckage_kind | dist_id | dist_name | dist_version | dist_version_code_name | dist_version_id | dist_arch | dist_cpe | dist_pretty_name | repo_name | repo_key | repo_uri | fixe
+d_in_version | arch_operation | vulnerable_range | version_kind 
+----+-----------+------+---------+------+-------------+--------+-------+----------+---------------------+--------------+-----------------+----------------+--------------+---
+-----------+---------+-----------+--------------+------------------------+-----------------+-----------+----------+------------------+-----------+----------+----------+-----
+-------------+----------------+------------------+--------------
+(0 rows)
+
+postgres=# \q
+sh-4.4$ 
+sh-4.4$ exit
+
+$ oc get pod
+NAME                                                   READY   STATUS      RESTARTS       AGE
+example-registry-clair-app-666d94b57-b85k8             1/1     Running     0              6m9s
+
+```
+
+Get the key from clair config in use
+
+```
+$ oc rsh example-registry-clair-app-666d94b57-b85k8
+sh-4.4$ cat /clair/config.yaml 
+auth:
+    psk:
+        iss:
+            - quay
+            - clairctl
+        key: YWlybkxReDhPQTlvTk1wYWVtVDVwam5ZZHBXM01JVjM=
+http_listen_addr: :8080
+indexer:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    layer_scan_concurrency: 5
+    migrations: true
+    scanlock_retry: 10
+log_level: info
+matcher:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    migrations: true
+metrics:
+    name: prometheus
+notifier:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    delivery_interval: 1m0s
+    migrations: true
+    poll_interval: 5m0s
+    webhook:
+        callback: http://example-registry-clair-app/notifier/api/v1/notifications
+        target: https://example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com/secscan/notification
+
+
+```
+
+Set up NFS
+```
+# yum -y install nfs-utils
+
+# systemctl enable --now nfs-server rpcbind
+
+# mkdir /nfs
+
+# chmod 777 /nfs
+
+# cat /etc/exports
+/nfs *(rw)
+
+# exportfs -r
+
+# systemctl restart nfs-server
+
+# ip a | grep -w inet
+    inet 127.0.0.1/8 scope host lo
+    inet 192.168.0.130/24 brd 192.168.0.255 scope global dynamic noprefixroute eth0
+# mkdir /remote
+
+# mount -t nfs 192.168.0.130:/nfs /remote
+
+# df -Th /remote/
+Filesystem         Type  Size  Used Avail Use% Mounted on
+192.168.0.130:/nfs nfs4   30G   16G   15G  52% /remote
+
+# echo 123 >/remote/file01
+
+# cat /remote/file01
+123
+
+# umount /remote 
+
+```
+
+
+```
+$ cat pv.yaml 
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv0001 
+spec:
+  capacity:
+    storage: 5Gi 
+  accessModes:
+  - ReadWriteOnce 
+  nfs: 
+    path: /nfs 
+    server: 192.168.0.130
+  persistentVolumeReclaimPolicy: Retain 
+
+$ oc apply -f pv.yaml
+
+$ oc get pv pv0001
+NAME     CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+pv0001   5Gi        RWO            Retain           Available                                   42s
+
+$ cat pvc.yaml 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-claim1
+spec:
+  accessModes:
+    - ReadWriteOnce 
+  resources:
+    requests:
+      storage: 5Gi 
+  volumeName: pv0001
+  storageClassName: ""
+
+$ oc apply -f pvc.yaml
+persistentvolumeclaim/nfs-claim1 created
+
+$ oc get pvc nfs-claim1
+NAME         STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+nfs-claim1   Bound    pv0001   5Gi        RWO                           8s
+
+```
+
+Add PVC to deploy
+```
+$ oc get deploy
+NAME                                  READY   UP-TO-DATE   AVAILABLE   AGE
+example-registry-clair-app            2/2     2            2           94m
+
+$ oc edit deploy example-registry-clair-app
+$ oc edit deploy example-registry-clair-app
+
+spec:
+
+  template:
+
+    spec:
+      containers:
+
+        volumeMounts:
+        - mountPath: "/updaters"             
+          name: data
+
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: nfs-claim1
+
+
+```
+**Failed since there is Firewall between worker nodes and bastion in Lab which is out of my control**
+
 
