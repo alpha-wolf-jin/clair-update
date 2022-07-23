@@ -163,3 +163,5 @@ $ ./clairctl-3-6 -D --config ./dest-config.yaml import-updaters  updates.gz
 ```
 
 > **Guess there is a bug in clairctl from quay3.7**
+
+> **Workaround is to use the clairctl from quay3.6 to import**
