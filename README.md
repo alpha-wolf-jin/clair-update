@@ -22,3 +22,71 @@ time="2022-07-23T01:42:51Z" level=error msg="exec failed: unable to start contai
 command terminated with exit code 255
 
 ```
+
+**Workround**
+
+Create Storage
+```
+cat clair-pvc.yaml 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: share-date-01
+  namespace: quay-enterprise
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ocs-storagecluster-cephfs
+  volumeMode: Filesystem
+
+$ oc apply -f clair-pvc.yaml 
+
+$ oc get pvc share-date-01
+NAME            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS                AGE
+share-date-01   Bound    pvc-9abacc62-96bb-460c-bd8c-c6259f64a173   1Gi        RWX            ocs-storagecluster-cephfs   19s
+
+```
+
+Update Deploy to use the storage
+```
+$ oc edit deploy example-registry-clair-app
+
+spec:
+
+  template:
+
+    spec:
+      containers:
+
+        volumeMounts:
+        - mountPath: "/updaters"             
+          name: data
+
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: share-date-01
+
+$ oc rsh example-registry-clair-app-67659d9b88-sfp4b
+sh-4.4$ ls -ld /updaters
+drwxrwxrwx. 2 root root 0 Jul 23 02:19 /updaters
+
+sh-4.4$ cp /bin/clairctl /updaters/.
+sh-4.4$ cp /clair/config.yaml /updaters/.
+
+sh-4.4$ ls -l /updaters  
+total 24329
+-rwxr-xr-x. 1 1000670000 root 24910609 Jul 23 02:34 clairctl
+-rw-r--r--. 1 1000670000 root     1055 Jul 23 02:35 config.yaml
+
+sh-4.4$ exit
+exit
+
+```
+
+**Revert back conf on deploy example-registry-clair-app**
+
+
