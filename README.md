@@ -152,11 +152,15 @@ $ oc port-forward service/example-registry-clair-postgres 5432:5432
 
 ## 7.2.5. Importing the updaters bundle into the air-gapped environment
 
-**Workround 02**
+**clairctl import-updaters failed**
 ```
 $ ./clairctl-3-7 -D --config ./clair-config.yaml import-updaters -g updates.gz 
 2022-07-23T10:53:02Z ERR  error="gzip: invalid header"
 
+```
+
+**Workround 02**
+```
 $ ./clairctl-3-6 -D --config ./clair-config.yaml import-updaters  updates.gz 
 2022-07-23T10:53:43Z INF fingerprint match, skipping component=libvuln/OfflineImporter updater=RHEL7-dotnet-3.0
 2022-07-23T10:53:43Z INF fingerprint match, skipping component=libvuln/OfflineImporter updater=RHEL7-openstack-9
