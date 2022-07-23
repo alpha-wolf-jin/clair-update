@@ -88,5 +88,61 @@ exit
 ```
 
 **Revert back conf on deploy example-registry-clair-app**
+Retrieve back the file inside POD
+```
+$ echo "clarictl and config.yaml" >index.html
 
+$ oc create configmap index-html --from-file=index.html=./index.html
+
+$ cat deploy-http.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/instance: web
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: web
+  template:
+    metadata:
+      labels:
+        deployment: web
+    spec:
+      containers:
+      - image: registry.redhat.io/rhel8/httpd-24:1-161.1638356842
+        name: web
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        resources: {}
+        volumeMounts:
+        - mountPath: "/var/www/html/data" 
+          name: data
+        - name: index-html
+          mountPath: /var/www/html/index.html
+          readOnly: true
+          subPath: index.html
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: index.html
+            path: index.html
+          name: index-html
+        name: index-html
+      - name: data
+        persistentVolumeClaim:
+          claimName: share-date-01
+
+$ oc apply -f deploy-http.yaml
+
+
+```
 
