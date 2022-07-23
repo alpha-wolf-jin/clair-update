@@ -155,4 +155,4 @@ $ ./clairctl-3-6 -D --config ./dest-config.yaml import-updaters  updates.gz
 
 ```
 
-
+> **Guess there is bug in clairctl from quay3.7**
