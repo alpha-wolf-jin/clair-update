@@ -88,6 +88,7 @@ exit
 ```
 
 **Revert back conf on deploy example-registry-clair-app**
+
 Retrieve back the file inside POD
 ```
 $ echo "clarictl and config.yaml" >index.html
@@ -157,10 +158,63 @@ $ wget http://web-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.co
 
 $ wget http://web-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com/data/config.yaml
 
-$ ll clairctl config.yaml
--rw-r--r--. 1 jinzha-redhat.com users 24910609 Jul 23 02:34 clairctl
--rw-r--r--. 1 jinzha-redhat.com users     1055 Jul 23 02:35 config.yaml
+$ chmod u+x ./clairctl
 
+$ ll clairctl config.yaml
+-rwxr--r--. 1 jinzha-redhat.com users 24910609 Jul 23 02:34 clairctl
+-rw-r--r--. 1 jinzha-redhat.com users     1055 Jul 23 02:35 config.yaml
+```
+
+
+Exporting the updaters bundle
+
+Export RHEL and Oracle updaters
+```
+$ mv config.yaml resource-config.yaml
+
+$ vim resource-config.yaml
+
+updaters:
+  sets:
+    - rhel
+    - oracle
+
+$ ./clairctl --config ./resource-config.yaml export-updaters updates.gz
+
+$ ll updates.gz
+-rw-r--r--. 1 jinzha-redhat.com users 132385639 Jul 23 03:09 updates.gz
+
+$ file updates.gz
+updates.gz: gzip compressed data, original size 1556964611
 
 ```
+
+Importing the updaters bundle into the air-gapped environment
+
+```
+$ cp resource-config.yaml dest--config.yaml
+
+indexer:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    layer_scan_concurrency: 5
+    migrations: true
+    scanlock_retry: 10
+    scanner:
+        package: {}
+        dist: {}
+        repo: {}
+    airgap: ture
+
+:%s#example-registry-clair-postgres#localhost#g
+
+```
+
+On other session, run port forward
+```
+$ oc port-forward service/example-registry-clair-postgres 5432:5432
+Forwarding from 127.0.0.1:5432 -> 5432
+Forwarding from [::1]:5432 -> 5432
+```
+
+http_listen_addr
 
