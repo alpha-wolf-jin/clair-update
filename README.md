@@ -1,5 +1,10 @@
 # clair-update
 
+'''
+$ git config --global credential.helper 'cache --timeout 72000'
+$ git add . ; git commit -a -m "update README" ; git push -u origin main
+```
+
 https://access.redhat.com/documentation/en-us/red_hat_quay/3.7/html-single/deploy_red_hat_quay_on_openshift_with_the_quay_operator/index#quay_operator_features
 
 # 7.2. Manually updating the vulnerability databases for Clair in an air-gapped OpenShift cluster
