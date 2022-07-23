@@ -91,7 +91,7 @@ $ vim clair-config.yaml
 
 :%s#example-registry-clair-postgres#localhost#g
 
-# lmit updater to RHEL & Oracle
+# limit updater to RHEL & Oracle
 $ cat clair-config.yaml
 auth:
     psk:
