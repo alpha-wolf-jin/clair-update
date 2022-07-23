@@ -143,6 +143,24 @@ spec:
 
 $ oc apply -f deploy-http.yaml
 
+$ oc get pod
+web-dc6d675c9-lhjh5                                    1/1     Running     0             2m39s
+
+$ oc expose deploy web
+
+$ oc expose service/web
+
+$ oc get route
+web   web-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com   web port-1   None
+
+$ wget http://web-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com/data/clairctl
+
+$ wget http://web-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com/data/config.yaml
+
+$ ll clairctl config.yaml
+-rw-r--r--. 1 jinzha-redhat.com users 24910609 Jul 23 02:34 clairctl
+-rw-r--r--. 1 jinzha-redhat.com users     1055 Jul 23 02:35 config.yaml
+
 
 ```
 
