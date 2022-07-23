@@ -80,63 +80,65 @@ $ ll /home/jinzha-redhat.com/clair/updaters/clairctl*
 
 ```
 
-## 7.2.3. Exporting the updaters bundle
+## 7.2.2. Retrieving the Clair config
+
 
 ```
-cd ./clair/updaters
+$ oc get secret -n quay-enterprise example-registry-clair-config-secret-kk9h966cfh -o "jsonpath={$.data['config\.yaml']}" | base64 -d > clair-config.yaml
 
-log_level: info
-indexer:
-    connstring: host=localhost port=5432 dbname=postgres user=postgres password=postgres sslmode=disable 
-    scanlock_retry: 10
-    layer_scan_concurrency: 5
-    migrations: true
-    scanner:
-        package: {}
-        dist: {}
-        repo: {}
-    airgap: true
-matcher:
-    connstring: host=localhost port=5432 dbname=postgres user=postgres password=postgres sslmode=disable 
-    max_conn_pool: 100
-    indexer_addr: ""
-    migrations: true
-    period: null
-    disable_updaters: false
-notifier:
-    connstring: host=localhost port=5432 dbname=postgres user=postgres password=postgres sslmode=disable 
-    delivery_interval: 1m0s
-    migrations: true
-    indexer_addr: ""
-    matcher_addr: ""
-    poll_interval: 5m
-    webhook:
-        callback: http://example-registry-clair-app/notifier/api/v1/notifications
-        target: https://example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com/secscan/notification
+# user localhost to replace example-registry-clair-postgres
+$ vim clair-config.yaml
+
+:%s#example-registry-clair-postgres#localhost#g
+
+# lmit updater to RHEL & Oracle
+$ cat clair-config.yaml
 auth:
     psk:
         iss:
             - quay
             - clairctl
         key: YWlybkxReDhPQTlvTk1wYWVtVDVwam5ZZHBXM01JVjM=
+http_listen_addr: :8080
+indexer:
+    connstring: host=localhost port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    layer_scan_concurrency: 5
+    migrations: true
+    scanlock_retry: 10
+log_level: info
+matcher:
+    connstring: host=localhost port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    migrations: true
 metrics:
     name: prometheus
-    prometheus:
-      endpoint: null
-    dogstatsd:
-      url: ""
+notifier:
+    connstring: host=localhost port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    delivery_interval: 1m0s
+    migrations: true
+    poll_interval: 5m0s
+    webhook:
+        callback: http://example-registry-clair-app/notifier/api/v1/notifications
+        target: https://example-registry-quay-quay-enterprise.apps.cluster-ptscz.ptscz.sandbox878.opentlc.com/secscan/notification
 updaters:
   sets:
     - rhel
     - oracle
 
-$ ./clairctl-3-7 --config ./dest-config.yaml export-updaters updates.gz
+
+```
+
+## 7.2.3. Exporting the updaters bundle
+
+```
+cd ./clair/updaters
+
+$ ./clairctl-3-7 --config ./clair-config.yaml export-updaters updates.gz
 
 $ ll
 total 177420
 -rwxr-xr-x. 1            231069 231069  22595592 Jul 23 10:37 clairctl-3-6
 -rwxr-xr-x. 1            231069 231069  24910609 Jul 23 10:41 clairctl-3-7
--rw-r--r--. 1 jinzha-redhat.com users       1282 Jul 23 10:47 dest-config.yaml
+-rw-r--r--. 1 jinzha-redhat.com users       1282 Jul 23 10:47 clair-config.yaml
 -rw-r--r--. 1 jinzha-redhat.com users  134163351 Jul 23 10:46 updates.gz
 ```
 
@@ -152,10 +154,10 @@ $ oc port-forward service/example-registry-clair-postgres 5432:5432
 
 Import Updaters
 ```
-$ ./clairctl-3-7 -D --config ./dest-config.yaml import-updaters -g updates.gz 
+$ ./clairctl-3-7 -D --config ./clair-config.yaml import-updaters -g updates.gz 
 2022-07-23T10:53:02Z ERR  error="gzip: invalid header"
 
-$ ./clairctl-3-6 -D --config ./dest-config.yaml import-updaters  updates.gz 
+$ ./clairctl-3-6 -D --config ./clair-config.yaml import-updaters  updates.gz 
 2022-07-23T10:53:43Z INF fingerprint match, skipping component=libvuln/OfflineImporter updater=RHEL7-dotnet-3.0
 2022-07-23T10:53:43Z INF fingerprint match, skipping component=libvuln/OfflineImporter updater=RHEL7-openstack-9
 2022-07-23T10:53:43Z INF fingerprint match, skipping component=libvuln/OfflineImporter updater=RHEL7-openshift-3.2
