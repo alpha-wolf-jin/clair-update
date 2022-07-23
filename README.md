@@ -1,6 +1,6 @@
 # clair-update
 
-'''
+```
 $ git config --global credential.helper 'cache --timeout 72000'
 $ git add . ; git commit -a -m "update README" ; git push -u origin main
 ```
