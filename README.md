@@ -170,3 +170,80 @@ $ ./clairctl-3-6 -D --config ./clair-config.yaml import-updaters  updates.gz
 
 > **Guess there is a bug in clairctl from quay3.7**
 
+# Others
+
+```
+$ oc get pod | grep postgres
+example-registry-clair-postgres-65d984b49f-swcww       1/1     Running     1 (11m ago)   12m
+
+$ oc rsh example-registry-clair-postgres-65d984b49f-swcww
+sh-4.4$ psql -U postgres;
+psql (10.21)
+Type "help" for help.
+
+postgres=# TABLE scanner;
+ id |          name           | version |     kind     
+----+-------------------------+---------+--------------
+  1 | dpkg                    | 4       | package
+  2 | apk                     | v0.0.1  | package
+  3 | rpm                     | 4       | package
+  4 | python                  | 0.1.0   | package
+  5 | java                    | 3       | package
+  6 | rhel_containerscanner   | 1       | package
+  7 | debian                  | v0.0.2  | distribution
+  8 | ubuntu                  | v0.0.1  | distribution
+  9 | alpine                  | v0.0.1  | distribution
+ 10 | rhel                    | v0.0.1  | distribution
+ 11 | aws                     | v0.0.1  | distribution
+ 12 | oracle                  | v0.0.1  | distribution
+ 13 | suse                    | v0.0.1  | distribution
+ 14 | photon                  | v0.0.1  | distribution
+ 15 | rhel-repository-scanner | 1.1     | repository
+ 16 | pip                     | 0.0.1   | repository
+ 17 | maven                   | 0.0.1   | repository
+ 18 | rhel_containerscanner   | 1       | repository
+(18 rows)
+
+postgres=# 
+postgres=# \q
+sh-4.4$ exit
+exit
+
+$ oc get pod | grep clair-app
+example-registry-clair-app-5b6b694cb5-2tftm            1/1     Running     0             19m
+
+$ oc rsh example-registry-clair-app-5b6b694cb5-2tftm
+sh-4.4$ cat^Cconfig/ 
+sh-4.4$ ls /
+bin  boot  clair  config  dev  etc  home  lib  lib64  lost+found  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+sh-4.4$ cat /clair/config.yaml 
+auth:
+    psk:
+        iss:
+            - quay
+            - clairctl
+        key: elh5SjJnYmNBS2tRM3c5MjE0eUlLNXp1U3NOUGdzSEI=
+http_listen_addr: :8080
+indexer:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    layer_scan_concurrency: 5
+    migrations: true
+    scanlock_retry: 10
+log_level: info
+matcher:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    migrations: true
+metrics:
+    name: prometheus
+notifier:
+    connstring: host=example-registry-clair-postgres port=5432 dbname=postgres user=postgres password=postgres sslmode=disable pool_max_conns=33
+    delivery_interval: 1m0s
+    migrations: true
+    poll_interval: 5m0s
+    webhook:
+        callback: http://example-registry-clair-app/notifier/api/v1/notifications
+        target: https://example-registry-quay-openshift-operators.apps.cluster-k8twm.k8twm.sandbox1612.opentlc.com/secscan/notification
+sh-4.4$ exit
+exit
+
+```
